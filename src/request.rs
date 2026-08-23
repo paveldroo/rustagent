@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{io::Write, time::Duration};
 
 use crate::{config, error::Error};
 use reqwest;
@@ -59,6 +59,16 @@ pub struct ChatRequest {
     chat_template_kwargs: Option<ChatTemplateKwargs>,
 }
 
+#[derive(Deserialize, Debug)]
+struct Choice {
+    message: Message,
+}
+
+#[derive(Deserialize, Debug)]
+struct ChatResponse {
+    choices: Vec<Choice>,
+}
+
 pub struct Client {
     pub http: reqwest::Client,
     cfg: config::Config,
@@ -94,7 +104,25 @@ impl Client {
             .send()
             .await?;
 
-        dbg!(res);
+        if !res.status().is_success() {
+            return Err(Error::Api {
+                status: res.status(),
+                body: res.json().await?,
+            });
+        }
+
+        let json_data: String = res.text().await?;
+        let response: ChatResponse = serde_json::from_str(&json_data)?;
+        let content = response
+            .choices
+            .into_iter()
+            .next()
+            .map(|choice| choice.message.content)
+            .unwrap_or_default();
+
+        let mut out = std::io::stdout().lock();
+        writeln!(out, "{content}")?;
+        out.flush()?;
 
         Ok(String::new())
     }

@@ -9,5 +9,14 @@ pub enum Error {
     Transport(#[from] reqwest::Error),
 
     #[error("json encoding error: {0}")]
-    Encode(#[from] serde_json::Error),
+    DecodeEncode(#[from] serde_json::Error),
+
+    #[error("unexpected response status {status}: {body}")]
+    Api {
+        status: reqwest::StatusCode,
+        body: String,
+    },
+
+    #[error("write to stdout error: {0}")]
+    Io(#[from] std::io::Error),
 }
