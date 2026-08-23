@@ -3,7 +3,7 @@ set dotenv-load := true
 export PROJECT_NAME := "rustagent"
 
 run:
-    RUST_BACKTRACE=1 cargo run
+    RUST_BACKTRACE=1 cargo run -- --task="write one joke"
 
 run-cat:
     cat tests/fixtures/prompt.txt | cargo run
